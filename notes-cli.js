@@ -6,6 +6,10 @@
  */
 
 const NotesCore = require('./notes-core');
+const { execSync } = require('child_process');
+const fs = require('fs');
+const path = require('path');
+const packageJson = require('./package.json');
 
 // ANSI Colors
 const colors = {
@@ -29,29 +33,74 @@ class NotesCLI {
    */
   showHelp() {
     console.log(`
-${colors.cyan}Apple Notes CLI - Quick Note Creator${colors.reset}
+${colors.cyan}Apple Notes CLI${colors.reset} v${packageJson.version}
 
-${colors.yellow}Verwendung:${colors.reset}
-  notes-cli <title> [body]
+${colors.yellow}Usage:${colors.reset}
+  notes-cli <title> [body]    Create a new note
+  notes-cli --version          Show version
+  notes-cli --update           Check for updates
+  notes-cli --help             Show this help
 
-${colors.yellow}Beispiele:${colors.reset}
-  notes-cli "Meine Notiz"
-  notes-cli "Meeting Notes" "Diskussion über Q4 Ziele"
-  notes-cli "Todo" "- Aufgabe 1\\n- Aufgabe 2\\n- Aufgabe 3"
+${colors.yellow}Examples:${colors.reset}
+  notes-cli "My Note"
+  notes-cli "Meeting" "## Agenda\\n- Point 1\\n- Point 2"
+  notes-cli "Todo" "- Task 1\\n- Task 2\\n- Task 3"
 
-${colors.yellow}Markdown wird unterstützt:${colors.reset}
-  # Überschriften
-  **Fett** und *Kursiv*
-  - Listen
-  \`Code\`
+${colors.yellow}Markdown Support:${colors.reset}
+  # Headings
+  **bold** and *italic*
+  - Lists
+  \`code\`
 
-${colors.gray}Umgebungsvariablen:${colors.reset}
-  DEBUG=true    Aktiviert Debug-Ausgaben
+${colors.gray}Environment:${colors.reset}
+  DEBUG=true    Enable debug output
 `);
   }
 
   /**
-   * Erstellt eine Notiz
+   * Show version
+   */
+  showVersion() {
+    console.log(`${colors.cyan}apple-notes-cli${colors.reset} v${packageJson.version}`);
+  }
+
+  /**
+   * Check for updates
+   */
+  async checkUpdate() {
+    try {
+      console.log(`${colors.cyan}Checking for updates...${colors.reset}`);
+      
+      // Get latest version from npm
+      const latestVersion = execSync('npm view apple-notes-cli version', { encoding: 'utf8' }).trim();
+      const currentVersion = packageJson.version;
+      
+      if (latestVersion === currentVersion) {
+        console.log(`${colors.green}✓${colors.reset} You have the latest version (v${currentVersion})`);
+      } else {
+        console.log(`${colors.yellow}Update available:${colors.reset} v${currentVersion} → v${latestVersion}`);
+        console.log(`\nTo update, run:\n  ${colors.cyan}npm install -g apple-notes-cli${colors.reset}`);
+      }
+    } catch (error) {
+      // Try checking GitHub if npm fails
+      try {
+        console.log(`${colors.gray}Checking GitHub...${colors.reset}`);
+        const gitLog = execSync('cd $(npm root -g)/apple-notes-cli && git fetch && git status -uno', { encoding: 'utf8' });
+        
+        if (gitLog.includes('Your branch is behind')) {
+          console.log(`${colors.yellow}Update available on GitHub${colors.reset}`);
+          console.log(`\nTo update, run:\n  ${colors.cyan}cd $(npm root -g)/apple-notes-cli && git pull${colors.reset}`);
+        } else {
+          console.log(`${colors.green}✓${colors.reset} You have the latest version`);
+        }
+      } catch (gitError) {
+        console.log(`${colors.gray}Could not check for updates${colors.reset}`);
+      }
+    }
+  }
+
+  /**
+   * Create a note
    */
   async createNote(title, body = '') {
     try {
@@ -77,18 +126,42 @@ ${colors.gray}Umgebungsvariablen:${colors.reset}
 async function main() {
   const cli = new NotesCLI();
   const args = process.argv.slice(2);
-  // Optionales Subcommand erlauben: `create`
-  if (args[0] === 'create') args.shift();
   
-  // Hilfe anzeigen
-  if (args.length === 0 || args[0] === '--help' || args[0] === '-h' || args[0] === 'help') {
+  // Handle commands
+  const command = args[0];
+  
+  // Version
+  if (command === '--version' || command === '-v') {
+    cli.showVersion();
+    process.exit(0);
+  }
+  
+  // Update
+  if (command === '--update' || command === '-u') {
+    await cli.checkUpdate();
+    process.exit(0);
+  }
+  
+  // Help
+  if (!command || command === '--help' || command === '-h' || command === 'help' || command === '/help') {
     cli.showHelp();
     process.exit(0);
   }
   
-  // Notiz erstellen
+  // Optional 'create' subcommand
+  if (command === 'create') {
+    args.shift();
+  }
+  
+  // Create note
   const title = args[0];
   const body = args.slice(1).join(' ');
+  
+  if (!title) {
+    console.error(`${colors.red}Error: Title required${colors.reset}`);
+    cli.showHelp();
+    process.exit(1);
+  }
   
   await cli.createNote(title, body);
 }

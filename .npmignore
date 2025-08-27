@@ -1,0 +1,36 @@
+# Development files
+.prettierrc
+eslint.config.js
+.gitignore
+CLAUDE.md
+
+# Git
+.git/
+.github/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Testing
+test/
+tests/
+coverage/
+.nyc_output/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# macOS
+.DS_Store
+
+# Temp files
+*.tmp
+*.bak
+*~
+
+# Packages
+*.tgz

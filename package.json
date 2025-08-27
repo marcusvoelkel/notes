@@ -1,7 +1,7 @@
 {
   "name": "apple-notes-cli",
-  "version": "1.0.0",
-  "description": "Elegantes CLI-Tool für Apple Notes - Erstelle, durchsuche und verwalte deine Notizen direkt vom Terminal",
+  "version": "1.1.0",
+  "description": "CLI tool for creating notes in Apple Notes",
   "main": "notes-core.js",
   "bin": {
     "apple-notes": "./notes-cli.js",
@@ -33,12 +33,12 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/marcusvoelkel/apple-notes-cli.git"
+    "url": "git+https://github.com/marcusvoelkel/notes.git"
   },
   "bugs": {
-    "url": "https://github.com/marcusvoelkel/apple-notes-cli/issues"
+    "url": "https://github.com/marcusvoelkel/notes/issues"
   },
-  "homepage": "https://github.com/marcusvoelkel/apple-notes-cli#readme"
+  "homepage": "https://github.com/marcusvoelkel/notes#readme"
   ,
   "files": [
     "notes-cli.js",
