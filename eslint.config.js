@@ -7,7 +7,6 @@ module.exports = [
     ignores: [
       'examples/**',
       'notes',
-      'notes-date-search.js',
       '**/*.md',
       '**/*.yml',
       '**/*.yaml',
