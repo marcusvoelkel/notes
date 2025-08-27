@@ -1,0 +1,336 @@
+#!/usr/bin/env node
+
+const { execSync } = require('child_process');
+const readline = require('readline');
+const path = require('path');
+
+// ANSI Color codes
+const colors = {
+    reset: '\x1b[0m',
+    bright: '\x1b[1m',
+    cyan: '\x1b[36m',
+    green: '\x1b[32m',
+    yellow: '\x1b[33m',
+    blue: '\x1b[34m',
+    magenta: '\x1b[35m',
+    red: '\x1b[31m',
+    gray: '\x1b[90m'
+};
+
+// Menu ASCII Art
+const menuHeader = `
+${colors.cyan}╔══════════════════════════════════════╗
+║     ${colors.bright}Apple Notes Manager${colors.reset}${colors.cyan}              ║
+╚══════════════════════════════════════╝${colors.reset}
+`;
+
+// Menu options
+const menuOptions = [
+    { key: '1', label: 'Create Note', action: 'create' },
+    { key: '2', label: 'List Notes', action: 'list' },
+    { key: '3', label: 'Search Notes', action: 'search' },
+    { key: '4', label: 'Read Note', action: 'get' },
+    { key: '5', label: 'Search by Date', action: 'date' },
+    { key: '6', label: 'Edit Note', action: 'edit' },
+    { key: 'q', label: 'Quit', action: 'quit' }
+];
+
+const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout
+});
+
+function clearScreen() {
+    console.clear();
+}
+
+function displayMenu() {
+    clearScreen();
+    console.log(menuHeader);
+    console.log(`${colors.gray}Choose an option:${colors.reset}\n`);
+    
+    menuOptions.forEach(option => {
+        if (option.key === 'q') {
+            console.log(`${colors.gray}──────────────────────────────────${colors.reset}`);
+        }
+        console.log(`  ${colors.bright}[${option.key}]${colors.reset} ${option.label}`);
+    });
+    
+    console.log('');
+}
+
+function runCommand(cmd) {
+    try {
+        const result = execSync(cmd, { encoding: 'utf8', stdio: 'pipe' });
+        return result;
+    } catch (error) {
+        console.error(`${colors.red}Error: ${error.message}${colors.reset}`);
+        return null;
+    }
+}
+
+async function prompt(question) {
+    return new Promise((resolve) => {
+        rl.question(`${colors.cyan}${question}${colors.reset}`, (answer) => {
+            resolve(answer);
+        });
+    });
+}
+
+async function waitForEnter() {
+    await prompt('\nPress Enter to continue...');
+}
+
+async function createNote() {
+    clearScreen();
+    console.log(`${colors.bright}${colors.green}📝 Create New Note${colors.reset}\n`);
+    
+    const title = await prompt('Enter note title: ');
+    if (!title.trim()) {
+        console.log(`${colors.red}Title cannot be empty!${colors.reset}`);
+        await waitForEnter();
+        return;
+    }
+    
+    const content = await prompt('Enter note content: ');
+    
+    console.log(`\n${colors.yellow}Creating note...${colors.reset}`);
+    const result = runCommand(`./notes-cli.js create "${title}" "${content}"`);
+    
+    if (result) {
+        console.log(`${colors.green}✅ ${result}${colors.reset}`);
+    }
+    
+    await waitForEnter();
+}
+
+async function listNotes() {
+    clearScreen();
+    console.log(`${colors.bright}${colors.blue}📋 All Notes${colors.reset}\n`);
+    
+    const result = runCommand('./notes-cli.js list');
+    
+    if (result) {
+        const lines = result.split('\n').filter(line => line.trim());
+        lines.forEach((line, index) => {
+            if (index === 0) {
+                console.log(`${colors.gray}${line}${colors.reset}`);
+            } else {
+                console.log(`  • ${line}`);
+            }
+        });
+    }
+    
+    await waitForEnter();
+}
+
+async function searchNotes() {
+    clearScreen();
+    console.log(`${colors.bright}${colors.magenta}🔍 Search Notes${colors.reset}\n`);
+    
+    const searchTerm = await prompt('Enter search term: ');
+    if (!searchTerm.trim()) {
+        console.log(`${colors.red}Search term cannot be empty!${colors.reset}`);
+        await waitForEnter();
+        return;
+    }
+    
+    console.log(`\n${colors.yellow}Searching...${colors.reset}\n`);
+    const result = runCommand(`./notes-cli.js search "${searchTerm}"`);
+    
+    if (result) {
+        const lines = result.split('\n').filter(line => line.trim());
+        if (lines.length === 0 || lines[0].includes('No notes found')) {
+            console.log(`${colors.gray}No notes found matching "${searchTerm}"${colors.reset}`);
+        } else {
+            lines.forEach((line, index) => {
+                if (index === 0) {
+                    console.log(`${colors.gray}${line}${colors.reset}`);
+                } else {
+                    console.log(`  • ${line}`);
+                }
+            });
+        }
+    }
+    
+    await waitForEnter();
+}
+
+async function getNote() {
+    clearScreen();
+    console.log(`${colors.bright}${colors.yellow}📖 Read Note${colors.reset}\n`);
+    
+    // First list available notes
+    console.log(`${colors.gray}Available notes:${colors.reset}`);
+    const listResult = runCommand('./notes-cli.js list');
+    if (listResult) {
+        const lines = listResult.split('\n').filter(line => line.trim() && !line.includes('Found'));
+        lines.forEach(line => {
+            console.log(`  ${colors.cyan}•${colors.reset} ${line}`);
+        });
+    }
+    
+    console.log('');
+    const noteTitle = await prompt('Enter note title to read: ');
+    if (!noteTitle.trim()) {
+        console.log(`${colors.red}Note title cannot be empty!${colors.reset}`);
+        await waitForEnter();
+        return;
+    }
+    
+    console.log(`\n${colors.yellow}Fetching note...${colors.reset}\n`);
+    const result = runCommand(`./notes-cli.js get "${noteTitle}"`);
+    
+    if (result) {
+        console.log(`${colors.bright}${colors.green}📄 ${noteTitle}${colors.reset}`);
+        console.log(`${colors.gray}${'─'.repeat(40)}${colors.reset}`);
+        console.log(result);
+        console.log(`${colors.gray}${'─'.repeat(40)}${colors.reset}`);
+    }
+    
+    await waitForEnter();
+}
+
+async function editNote() {
+    clearScreen();
+    console.log(`${colors.bright}${colors.blue}✏️  Edit Note${colors.reset}\n`);
+    
+    // First list available notes
+    console.log(`${colors.gray}Available notes:${colors.reset}`);
+    const listResult = runCommand('./notes-cli.js list');
+    if (listResult) {
+        const lines = listResult.split('\n').filter(line => line.trim() && !line.includes('Found'));
+        lines.forEach(line => {
+            console.log(`  ${colors.cyan}•${colors.reset} ${line}`);
+        });
+    }
+    
+    console.log('');
+    const noteTitle = await prompt('Enter note title to edit: ');
+    if (!noteTitle.trim()) {
+        console.log(`${colors.red}Note title cannot be empty!${colors.reset}`);
+        await waitForEnter();
+        return;
+    }
+    
+    const newContent = await prompt('Enter new content: ');
+    if (!newContent.trim()) {
+        console.log(`${colors.red}Content cannot be empty!${colors.reset}`);
+        await waitForEnter();
+        return;
+    }
+    
+    console.log(`\n${colors.yellow}Updating note...${colors.reset}`);
+    const result = runCommand(`./notes-cli.js edit "${noteTitle}" "${newContent}"`);
+    
+    if (result) {
+        console.log(`${colors.green}✅ ${result}${colors.reset}`);
+    }
+    
+    await waitForEnter();
+}
+
+async function searchByDate() {
+    clearScreen();
+    console.log(`${colors.bright}${colors.magenta}📅 Search Notes by Date${colors.reset}\n`);
+    
+    console.log(`${colors.gray}Enter dates in format: MM/DD/YYYY${colors.reset}\n`);
+    
+    const startDate = await prompt('Enter start date: ');
+    if (!startDate.trim()) {
+        console.log(`${colors.red}Start date cannot be empty!${colors.reset}`);
+        await waitForEnter();
+        return;
+    }
+    
+    const endDate = await prompt('Enter end date: ');
+    if (!endDate.trim()) {
+        console.log(`${colors.red}End date cannot be empty!${colors.reset}`);
+        await waitForEnter();
+        return;
+    }
+    
+    console.log(`\n${colors.yellow}Searching notes from ${startDate} to ${endDate}...${colors.reset}\n`);
+    const result = runCommand(`./notes-date-search.js "${startDate}" "${endDate}"`);
+    
+    if (result) {
+        const lines = result.split('\n').filter(line => line.trim());
+        if (lines.length === 0 || lines[0].includes('No notes found')) {
+            console.log(`${colors.gray}No notes found in date range${colors.reset}`);
+        } else {
+            lines.forEach((line, index) => {
+                if (line.includes('Found') || line.includes('Notes from')) {
+                    console.log(`${colors.gray}${line}${colors.reset}`);
+                } else if (line.includes('Title:')) {
+                    console.log(`\n${colors.cyan}${line}${colors.reset}`);
+                } else {
+                    console.log(`  ${line}`);
+                }
+            });
+        }
+    }
+    
+    await waitForEnter();
+}
+
+async function handleMenuChoice(choice) {
+    const option = menuOptions.find(opt => opt.key === choice.toLowerCase());
+    
+    if (!option) {
+        console.log(`${colors.red}Invalid option! Please try again.${colors.reset}`);
+        await waitForEnter();
+        return;
+    }
+    
+    switch (option.action) {
+        case 'create':
+            await createNote();
+            break;
+        case 'list':
+            await listNotes();
+            break;
+        case 'search':
+            await searchNotes();
+            break;
+        case 'get':
+            await getNote();
+            break;
+        case 'date':
+            await searchByDate();
+            break;
+        case 'edit':
+            await editNote();
+            break;
+        case 'quit':
+            clearScreen();
+            console.log(`${colors.green}👋 Goodbye!${colors.reset}`);
+            process.exit(0);
+    }
+}
+
+async function main() {
+    // Check if notes-cli.js exists
+    try {
+        execSync('test -f ./notes-cli.js', { stdio: 'ignore' });
+    } catch (error) {
+        console.error(`${colors.red}Error: notes-cli.js not found in current directory!${colors.reset}`);
+        console.log(`${colors.yellow}Please run this command from the notes directory.${colors.reset}`);
+        process.exit(1);
+    }
+    
+    while (true) {
+        displayMenu();
+        const choice = await prompt('Select option: ');
+        await handleMenuChoice(choice);
+    }
+}
+
+// Handle Ctrl+C gracefully
+process.on('SIGINT', () => {
+    clearScreen();
+    console.log(`\n${colors.green}👋 Goodbye!${colors.reset}`);
+    process.exit(0);
+});
+
+// Start the menu
+main().catch(console.error);

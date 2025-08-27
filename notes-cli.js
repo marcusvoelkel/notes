@@ -1,224 +1,110 @@
 #!/usr/bin/env node
 
-const { exec } = require('child_process');
-const { promisify } = require('util');
-const execAsync = promisify(exec);
+/**
+ * Apple Notes CLI - Simplified
+ * Schnelles Erstellen von Notizen in Apple Notes
+ */
 
-class NotesManager {
-  convertToHTML(text) {
-    // Konvertiere Text zu HTML
-    let html = text;
-    
-    // Überschriften mit # 
-    html = html.replace(/^### (.+)$/gm, '<br><h3>$1</h3><br>');
-    html = html.replace(/^## (.+)$/gm, '<br><h2>$1</h2><br>');
-    html = html.replace(/^# (.+)$/gm, '<br><h1>$1</h1><br>');
-    
-    // Listen mit - oder * 
-    // Sammle alle Listenelemente und erstelle eine saubere Liste
-    html = html.replace(/((?:^[\*\-] .+$\n?)+)/gm, (match) => {
-      const items = match.trim().split('\n').map(item => 
-        '<li>' + item.replace(/^[\*\-] /, '') + '</li>'
-      ).join('');
-      return '<ul>' + items + '</ul>';
+const NotesCore = require('./notes-core');
+
+// ANSI Colors
+const colors = {
+  reset: '\x1b[0m',
+  green: '\x1b[32m',
+  red: '\x1b[31m',
+  yellow: '\x1b[33m',
+  cyan: '\x1b[36m',
+  gray: '\x1b[90m'
+};
+
+class NotesCLI {
+  constructor() {
+    this.core = new NotesCore({ 
+      debug: process.env.DEBUG === 'true' 
     });
-    
-    // Horizontale Linie
-    html = html.replace(/^---+$/gm, '<hr>');
-    
-    // Absätze (zwei oder mehr Zeilenumbrüche)
-    html = html.replace(/\n\n+/g, '</p><p>');
-    
-    // Einzelne Zeilenumbrüche
-    html = html.replace(/(?<!<\/li>)\n(?!<li>)/g, '<br>');
-    
-    // Wrap alles in einen Container
-    html = '<div style=font-size:16px>' + html + '</div>';
-    
-    return html;
   }
 
-  async executeAppleScript(script) {
-    try {
-      const { stdout, stderr } = await execAsync(`osascript -e '${script}'`);
-      if (stderr) console.error('AppleScript error:', stderr);
-      return stdout.trim();
-    } catch (error) {
-      console.error('Error executing AppleScript:', error.message);
-      return null;
-    }
+  /**
+   * Zeigt die Hilfe an
+   */
+  showHelp() {
+    console.log(`
+${colors.cyan}Apple Notes CLI - Quick Note Creator${colors.reset}
+
+${colors.yellow}Verwendung:${colors.reset}
+  notes-cli <title> [body]
+
+${colors.yellow}Beispiele:${colors.reset}
+  notes-cli "Meine Notiz"
+  notes-cli "Meeting Notes" "Diskussion über Q4 Ziele"
+  notes-cli "Todo" "- Aufgabe 1\\n- Aufgabe 2\\n- Aufgabe 3"
+
+${colors.yellow}Markdown wird unterstützt:${colors.reset}
+  # Überschriften
+  **Fett** und *Kursiv*
+  - Listen
+  \`Code\`
+
+${colors.gray}Umgebungsvariablen:${colors.reset}
+  DEBUG=true    Aktiviert Debug-Ausgaben
+`);
   }
 
-  async searchNotes(query) {
-    const script = `
-      tell application "Notes"
-        set searchResults to {}
-        repeat with n in notes
-          if (name of n contains "${query}") or (body of n contains "${query}") then
-            set end of searchResults to {name: name of n, body: body of n, id: id of n}
-          end if
-        end repeat
-        return searchResults
-      end tell
-    `;
-    
-    const result = await this.executeAppleScript(script);
-    if (result) {
-      console.log('Search Results:');
-      console.log(result);
-    }
-    return result;
-  }
-
+  /**
+   * Erstellt eine Notiz
+   */
   async createNote(title, body = '') {
-    // Konvertiere Body zu HTML wenn vorhanden
-    const htmlBody = body ? this.convertToHTML(body) : '';
-    
-    // Escape für AppleScript - ersetze " mit \"
-    const escapedBody = htmlBody.replace(/"/g, '\\"');
-    const escapedTitle = title.replace(/"/g, '\\"');
-    
-    const script = `
-      tell application "Notes"
-        make new note with properties {name:"${escapedTitle}", body:"${escapedBody}"}
-        return "Note created: ${escapedTitle}"
-      end tell
-    `;
-    
-    const result = await this.executeAppleScript(script);
-    console.log(result);
-    return result;
-  }
-
-  async editNote(noteTitle, newBody) {
-    // Konvertiere Body zu HTML
-    const htmlBody = this.convertToHTML(newBody);
-    
-    // Escape für AppleScript - ersetze " mit \"
-    const escapedBody = htmlBody.replace(/"/g, '\\"');
-    const escapedTitle = noteTitle.replace(/"/g, '\\"');
-    
-    const script = `
-      tell application "Notes"
-        repeat with n in notes
-          if name of n is "${escapedTitle}" then
-            set body of n to "${escapedBody}"
-            return "Note updated: ${escapedTitle}"
-          end if
-        end repeat
-        return "Note not found: ${escapedTitle}"
-      end tell
-    `;
-    
-    const result = await this.executeAppleScript(script);
-    console.log(result);
-    return result;
-  }
-
-  async listNotes() {
-    const script = `
-      tell application "Notes"
-        set noteList to {}
-        repeat with n in notes
-          set end of noteList to name of n
-        end repeat
-        return noteList
-      end tell
-    `;
-    
-    const result = await this.executeAppleScript(script);
-    if (result) {
-      console.log('All Notes:');
-      console.log(result);
+    try {
+      if (!title) {
+        console.error(`${colors.red}Fehler: Titel erforderlich${colors.reset}`);
+        this.showHelp();
+        process.exit(1);
+      }
+      
+      const result = await this.core.create(title, body);
+      console.log(`${colors.green}✓${colors.reset} ${result}`);
+    } catch (error) {
+      console.error(`${colors.red}Fehler: ${error.message}${colors.reset}`);
+      if (process.env.DEBUG === 'true') {
+        console.error(colors.gray, error.stack, colors.reset);
+      }
+      process.exit(1);
     }
-    return result;
-  }
-
-  async getNoteContent(noteTitle) {
-    const script = `
-      tell application "Notes"
-        repeat with n in notes
-          if name of n is "${noteTitle}" then
-            return body of n
-          end if
-        end repeat
-        return "Note not found: ${noteTitle}"
-      end tell
-    `;
-    
-    const result = await this.executeAppleScript(script);
-    console.log(result);
-    return result;
   }
 }
 
+// Main
 async function main() {
+  const cli = new NotesCLI();
   const args = process.argv.slice(2);
-  const command = args[0];
-  const notesManager = new NotesManager();
-
-  switch (command) {
-    case 'search':
-      if (args[1]) {
-        await notesManager.searchNotes(args[1]);
-      } else {
-        console.log('Usage: notes-cli search <query>');
-      }
-      break;
-
-    case 'create':
-      if (args[1]) {
-        const title = args[1];
-        const body = args.slice(2).join(' ');
-        await notesManager.createNote(title, body);
-      } else {
-        console.log('Usage: notes-cli create <title> [body]');
-      }
-      break;
-
-    case 'edit':
-      if (args[1] && args[2]) {
-        const title = args[1];
-        const newBody = args.slice(2).join(' ');
-        await notesManager.editNote(title, newBody);
-      } else {
-        console.log('Usage: notes-cli edit <title> <new-body>');
-      }
-      break;
-
-    case 'list':
-      await notesManager.listNotes();
-      break;
-
-    case 'get':
-      if (args[1]) {
-        await notesManager.getNoteContent(args[1]);
-      } else {
-        console.log('Usage: notes-cli get <title>');
-      }
-      break;
-
-    default:
-      console.log(`
-Apple Notes CLI Tool
-Usage:
-  notes-cli search <query>     - Search notes by title or content
-  notes-cli create <title> [body] - Create a new note
-  notes-cli edit <title> <new-body> - Edit existing note
-  notes-cli list               - List all notes
-  notes-cli get <title>        - Get content of specific note
-Examples:
-  notes-cli search "meeting"
-  notes-cli create "My Note" "This is the content"
-  notes-cli edit "My Note" "Updated content"
-  notes-cli list
-  notes-cli get "My Note"
-      `);
+  // Optionales Subcommand erlauben: `create`
+  if (args[0] === 'create') args.shift();
+  
+  // Hilfe anzeigen
+  if (args.length === 0 || args[0] === '--help' || args[0] === '-h' || args[0] === 'help') {
+    cli.showHelp();
+    process.exit(0);
   }
+  
+  // Notiz erstellen
+  const title = args[0];
+  const body = args.slice(1).join(' ');
+  
+  await cli.createNote(title, body);
 }
 
+// Fehlerbehandlung
+process.on('unhandledRejection', (error) => {
+  console.error(`${colors.red}Unerwarteter Fehler: ${error.message}${colors.reset}`);
+  if (process.env.DEBUG === 'true') {
+    console.error(error);
+  }
+  process.exit(1);
+});
+
+// Starte die CLI
 if (require.main === module) {
-  main().catch(console.error);
+  main();
 }
 
-module.exports = NotesManager;
+module.exports = NotesCLI;

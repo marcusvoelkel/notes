@@ -1,0 +1,55 @@
+{
+  "name": "apple-notes-cli",
+  "version": "1.0.0",
+  "description": "Elegantes CLI-Tool für Apple Notes - Erstelle, durchsuche und verwalte deine Notizen direkt vom Terminal",
+  "main": "notes-core.js",
+  "bin": {
+    "apple-notes": "./notes-cli.js",
+    "notes-cli": "./notes-cli.js"
+  },
+  "scripts": {
+    "test": "echo \"No tests yet\" && exit 0",
+    "start": "./notes-cli.js --help",
+    "lint": "eslint .",
+    "format": "prettier -w .",
+    "check": "npm run lint"
+  },
+  "keywords": [
+    "apple",
+    "notes",
+    "cli",
+    "macos",
+    "productivity",
+    "markdown",
+    "applescript"
+  ],
+  "author": "Marcus Volkel",
+  "license": "MIT",
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "os": [
+    "darwin"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/marcusvoelkel/apple-notes-cli.git"
+  },
+  "bugs": {
+    "url": "https://github.com/marcusvoelkel/apple-notes-cli/issues"
+  },
+  "homepage": "https://github.com/marcusvoelkel/apple-notes-cli#readme"
+  ,
+  "files": [
+    "notes-cli.js",
+    "notes-core.js",
+    "README.md",
+    "LICENSE",
+    "package.json"
+  ],
+  "devDependencies": {
+    "eslint": "^9.11.0",
+    "globals": "^15.9.0",
+    "prettier": "^3.3.3"
+  }
+}
