@@ -1,6 +1,6 @@
 {
   "name": "apple-notes-cli",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "CLI tool for creating notes in Apple Notes",
   "main": "notes-core.js",
   "bin": {
