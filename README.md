@@ -16,6 +16,7 @@ npm install -g apple-notes-cli@latest
 
 ### Via GitHub
 ```bash
+# Klont das Repository und erstellt automatisch einen "notes" Ordner
 git clone https://github.com/marcusvoelkel/notes.git
 cd notes
 npm install
