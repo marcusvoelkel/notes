@@ -3,18 +3,24 @@
 ## 1. NPM Token erstellen
 
 1. Gehe zu https://www.npmjs.com/settings/marcusvoelkel/tokens
-2. Klicke auf "Generate New Token" 
-3. Wähle "Classic Token"
-4. Wähle Type: "Automation"
-5. Kopiere den Token
+2. Klicke auf "Generate New Token" → "Classic Token"
+3. **Token Type: "Automation"** (WICHTIG! Nicht "Publish" oder "Read-only")
+4. Name: z.B. "github-actions-notes"
+5. Kopiere den Token (beginnt mit npm_...)
 
 ## 2. GitHub Secret hinzufügen
 
-1. Gehe zu https://github.com/marcusvoelkel/notes/settings/secrets/actions
-2. Klicke auf "New repository secret"
-3. Name: `NPM_TOKEN`
-4. Value: [Dein NPM Token]
-5. Klicke auf "Add secret"
+### Schritt-für-Schritt:
+1. Gehe zu deinem Repository: https://github.com/marcusvoelkel/notes
+2. Klicke auf **"Settings"** (oben im Repo-Menü)
+3. Links in der Sidebar: **"Secrets and variables"** → **"Actions"**
+4. Klicke auf den grünen Button **"New repository secret"**
+5. Fülle aus:
+   - **Name:** `NPM_TOKEN` (genau so schreiben!)
+   - **Secret:** [Dein npm_... Token von Schritt 1]
+6. Klicke auf **"Add secret"**
+
+Direktlink: https://github.com/marcusvoelkel/notes/settings/secrets/actions
 
 ## 3. Verwendung
 

@@ -9,9 +9,9 @@ CLI-Tool zum Erstellen von Notizen in Apple Notes.
 
 ## Installation
 
-### Via npm (recommended - coming soon)
+### Via npm (recommended)
 ```bash
-npm install -g apple-notes-cli
+npm install -g apple-notes-cli@latest
 # Automatisches Setup von Aliases und Slash Commands wird beim Install ausgeführt
 ```
 
