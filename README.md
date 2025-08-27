@@ -20,7 +20,8 @@ npm link
 
 ```bash
 # Natürliche Sprache nutzen in Claude, Code, Codex CLI o.ä.
-notes-cli "Meeting" "## Agenda\n- Punkt 1\n- Punkt 2"
+"Fasse mir den Chat in einer Apple-Note zusammen..."
+"Erstelle eine Apple-Note zu..."
 
 # Einfache Notiz
 notes-cli "Titel"
