@@ -12,7 +12,9 @@
     "start": "./notes-cli.js --help",
     "lint": "eslint .",
     "format": "prettier -w .",
-    "check": "npm run lint"
+    "check": "npm run lint",
+    "postinstall": "node scripts/setup-integrations.js || true",
+    "setup": "node scripts/setup-integrations.js"
   },
   "keywords": [
     "apple",
@@ -43,6 +45,7 @@
   "files": [
     "notes-cli.js",
     "notes-core.js",
+    "scripts/setup-integrations.js",
     "README.md",
     "LICENSE",
     "package.json"

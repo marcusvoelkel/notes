@@ -148,8 +148,8 @@ async function main() {
     process.exit(0);
   }
   
-  // Optional 'create' subcommand
-  if (command === 'create') {
+  // Optional 'create' or 'add' subcommand
+  if (command === 'create' || command === 'add') {
     args.shift();
   }
   
