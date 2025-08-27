@@ -1,6 +1,6 @@
 {
   "name": "apple-notes-cli",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "CLI tool for creating notes in Apple Notes",
   "main": "notes-core.js",
   "bin": {
@@ -40,8 +40,7 @@
   "bugs": {
     "url": "https://github.com/marcusvoelkel/notes/issues"
   },
-  "homepage": "https://github.com/marcusvoelkel/notes#readme"
-  ,
+  "homepage": "https://github.com/marcusvoelkel/notes#readme",
   "files": [
     "notes-cli.js",
     "notes-core.js",
