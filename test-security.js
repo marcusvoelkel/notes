@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// Run comprehensive tests instead
 
 /**
  * Minimal Security Tests

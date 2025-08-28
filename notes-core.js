@@ -83,30 +83,28 @@ class NotesCore {
   escapeForAppleScript(text) {
     if (!text) return '';
     
-    // Remove all control characters and non-printable characters
-    // This includes Unicode line separators, paragraph separators, etc.
-    text = text.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F]/g, '');
+    // Remove dangerous control characters but keep common ones
+    text = text.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
     
     // Remove Unicode control characters
-    text = text.replace(/[\u2028\u2029\u0085\u000B\u000C\u2028\u2029]/g, '');
+    text = text.replace(/[\u2028\u2029]/g, '');
     
-    // Remove zero-width characters that could be used for obfuscation
+    // Remove zero-width characters that could be used for obfuscation  
     text = text.replace(/[\u200B-\u200F\u202A-\u202E\u2060-\u2064\u206A-\u206F\uFEFF]/g, '');
     
     // Escape special AppleScript characters
+    // WICHTIG: Reihenfolge ist kritisch!
     text = text
-      .replace(/\\/g, '\\\\')  // Backslashes first
-      .replace(/"/g, '\\"')    // Double quotes
-      .replace(/'/g, "\\'")      // Single quotes
-      .replace(/\n/g, '\\n')     // Newlines
-      .replace(/\r/g, '\\r')     // Carriage returns
-      .replace(/\t/g, '\\t')     // Tabs
-      .replace(/\f/g, '\\f')     // Form feeds
-      .replace(/\v/g, '\\v');    // Vertical tabs
+      .replace(/\\/g, '\\\\')       // Backslashes first
+      .replace(/"/g, '\\"')         // Double quotes
+      .replace(/\n/g, ' ')             // Replace newlines with space (prevent injection)
+      .replace(/\r/g, ' ')             // Replace returns with space
+      .replace(/[\t\f\v]/g, ' ')     // Replace other whitespace with space
+      .replace(/}/g, '')                // Remove closing braces (prevent breaking out)
+      .replace(/{/g, '');               // Remove opening braces
     
-    // Additional protection: Remove any remaining non-ASCII characters that could cause issues
-    // Allow only printable ASCII and common Unicode ranges
-    text = text.replace(/[^\x20-\x7E\u00A0-\u00FF\u0100-\u017F\u0180-\u024F\u1E00-\u1EFF]/g, '');
+    // Additional safety: remove any "end tell" or "tell" commands
+    text = text.replace(/\b(end\s+)?tell\b/gi, '');
     
     return text;
   }

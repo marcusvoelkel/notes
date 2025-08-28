@@ -1,6 +1,6 @@
 {
   "name": "apple-notes-cli",
-  "version": "1.1.7",
+  "version": "1.1.8",
   "description": "CLI tool for creating notes in Apple Notes",
   "main": "notes-core.js",
   "bin": {
@@ -8,7 +8,7 @@
     "notes-cli": "./notes-cli.js"
   },
   "scripts": {
-    "test": "node test-security.js",
+    "test": "node test-comprehensive.js",
     "start": "./notes-cli.js --help",
     "lint": "eslint .",
     "check": "npm run lint && npm test",
