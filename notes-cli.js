@@ -6,7 +6,7 @@
  */
 
 const NotesCore = require('./notes-core');
-const { execSync } = require('child_process');
+const { execFileSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const packageJson = require('./package.json');
@@ -70,9 +70,13 @@ ${colors.gray}Environment:${colors.reset}
   async checkUpdate() {
     try {
       console.log(`${colors.cyan}Checking for updates...${colors.reset}`);
+      if (process.env.NO_UPDATE_CHECK === 'true') {
+        console.log(`${colors.gray}Update check skipped (NO_UPDATE_CHECK).${colors.reset}`);
+        return;
+      }
       
-      // Get latest version from npm
-      const latestVersion = execSync('npm view apple-notes-cli version', { encoding: 'utf8' }).trim();
+      // Get latest version from npm without shell
+      const latestVersion = execFileSync('npm', ['view', 'apple-notes-cli', 'version'], { encoding: 'utf8' }).trim();
       const currentVersion = packageJson.version;
       
       if (latestVersion === currentVersion) {
@@ -85,7 +89,15 @@ ${colors.gray}Environment:${colors.reset}
       // Try checking GitHub if npm fails
       try {
         console.log(`${colors.gray}Checking GitHub...${colors.reset}`);
-        const gitLog = execSync('cd $(npm root -g)/apple-notes-cli && git fetch && git status -uno', { encoding: 'utf8' });
+        // Determine global install path and run git without shell
+        const npmRoot = execFileSync('npm', ['root', '-g'], { encoding: 'utf8' }).trim();
+        const repoPath = path.join(npmRoot, 'apple-notes-cli');
+        if (!fs.existsSync(repoPath) || !fs.existsSync(path.join(repoPath, '.git'))) {
+          console.log(`${colors.gray}Not a git-based install; skipping GitHub check.${colors.reset}`);
+          return;
+        }
+        execFileSync('git', ['-C', repoPath, 'fetch']);
+        const gitLog = execFileSync('git', ['-C', repoPath, 'status', '-uno'], { encoding: 'utf8' });
         
         if (gitLog.includes('Your branch is behind')) {
           console.log(`${colors.yellow}Update available on GitHub${colors.reset}`);

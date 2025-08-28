@@ -5,10 +5,12 @@
   "main": "notes-core.js",
   "bin": {
     "apple-notes": "./notes-cli.js",
-    "notes-cli": "./notes-cli.js"
+    "notes-cli": "./notes-cli.js",
+    "note": "./notes-cli.js",
+    "n": "./notes-cli.js"
   },
   "scripts": {
-    "test": "echo \"No tests yet\" && exit 0",
+    "test": "node tests/run-tests.js",
     "start": "./notes-cli.js --help",
     "lint": "eslint .",
     "format": "prettier -w .",

@@ -1,5 +1,5 @@
 /**
- * Apple Notes Core Module - Simplified
+ * Apple Notes Core Module
  * Nur Notizen erstellen - schnell und zuverlässig
  */
 
@@ -78,13 +78,17 @@ class NotesCore {
   }
 
   /**
-   * Escaped Text für AppleScript (sicher gegen Injection)
+   * Escaped Text für AppleScript 
    */
   escapeForAppleScript(text) {
     if (!text) return '';
-    
+    // Entferne problematische Steuerzeichen 
+    const cleaned = text
+      .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F]/g, ' ')
+      .replace(/[\u2028\u2029]/g, ' ');
+
     // Ersetze Backslashes zuerst
-    return text
+    return cleaned
       .replace(/\\/g, '\\\\')
       .replace(/"/g, '\\"')
       .replace(/\n/g, '\\n')
@@ -96,7 +100,12 @@ class NotesCore {
    * Konvertiert Markdown zu HTML für Apple Notes
    */
   convertToHTML(text) {
-    let html = text;
+    // Escape rohes HTML; dann Markdown-Ersatz anwenden
+    const escapeHtml = (s) => s
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+    let html = escapeHtml(text);
     
     // Code-Blöcke
     html = html.replace(/```([\s\S]*?)```/g, 

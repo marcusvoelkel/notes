@@ -18,12 +18,14 @@ on:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
         with:
           fetch-depth: 0
           
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8
         with:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org'
@@ -33,8 +35,8 @@ jobs:
         
       - name: Configure Git
         run: |
-          git config --global user.email "mvoelkel@gmail.com"
-          git config --global user.name "Marcus Volkel"
+          git config user.email "mvoelkel@gmail.com"
+          git config user.name "Marcus Volkel"
           
       - name: Bump version (manual trigger)
         if: github.event_name == 'workflow_dispatch'
@@ -50,7 +52,7 @@ jobs:
           
       - name: Create GitHub Release (manual trigger)
         if: github.event_name == 'workflow_dispatch'
-        uses: actions/create-release@v1
+        uses: actions/create-release@5b4bbf1a3ad74b6d9df53f7f3d440ad0f2d4f3e8
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
