@@ -43,17 +43,51 @@ ${colors.yellow}Usage:${colors.reset}
 
 ${colors.yellow}Examples:${colors.reset}
   notes-cli "My Note"
-  notes-cli "Meeting" "## Agenda\\n- Point 1\\n- Point 2"
-  notes-cli "Todo" "- Task 1\\n- Task 2\\n- Task 3"
+  notes-cli "Meeting Notes" "## Agenda\\n- Point 1\\n- Point 2"
+  notes-cli "Python Cheatsheet" "# Python Basics\\n- Variables\\n- Functions"
+  notes-cli "Session Summary" "## Key Points from today:\\n- Learned X\\n- Fixed Y"
+  
+${colors.yellow}AI Assistant Integration:${colors.reset}
+  Say any of these to your AI assistant:
+  • "note - xyz" or "/note xyz" → Save xyz to Notes
+  • "Save this in Apple Notes" → After content creation
+  • "Summarize this session in my Apple Notes"
+  • "Create a note with [topic]"
 
 ${colors.yellow}Markdown Support:${colors.reset}
   # Headings
   **bold** and *italic*
-  - Lists
-  \`code\`
+  - Lists and • bullets
+  \`code\` and code blocks
+  > Quotes
 
 ${colors.gray}Environment:${colors.reset}
   DEBUG=true    Enable debug output
+`);
+  }
+
+  /**
+   * Show AI assistant friendly message
+   */
+  showAIMessage() {
+    console.log(`
+${colors.cyan}📝 Apple Notes Integration Ready!${colors.reset}
+
+I can save content directly to your Apple Notes!
+
+${colors.yellow}Just say:${colors.reset}
+  • ${colors.green}"note - xyz"${colors.reset} or ${colors.green}"/note xyz"${colors.reset} → I'll save xyz to Notes
+  • ${colors.green}"Save this in Apple Notes"${colors.reset} → After I create content
+  • ${colors.green}"Summarize this session in my Apple Notes"${colors.reset}
+  • ${colors.green}"Create a note with [topic]"${colors.reset}
+
+${colors.yellow}Examples:${colors.reset}
+  • /note Meeting Notes from today
+  • note - Python Cheatsheet
+  • Create an article about React Hooks and save it
+  • Summarize our conversation in Apple Notes
+
+What would you like me to save to your Notes?
 `);
   }
 
@@ -139,6 +173,12 @@ async function main() {
   // Update
   if (command === '--update' || command === '-u') {
     await cli.checkUpdate();
+    process.exit(0);
+  }
+  
+  // AI Assistant mode
+  if (command === '/note' || command === 'note') {
+    cli.showAIMessage();
     process.exit(0);
   }
   
