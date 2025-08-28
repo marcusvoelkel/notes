@@ -8,12 +8,10 @@
     "notes-cli": "./notes-cli.js"
   },
   "scripts": {
-    "test": "echo \"No tests yet\" && exit 0",
+    "test": "node test-security.js",
     "start": "./notes-cli.js --help",
     "lint": "eslint .",
-    "format": "prettier -w .",
-    "check": "npm run lint",
-    "postinstall": "node scripts/setup-integrations.js || true",
+    "check": "npm run lint && npm test",
     "setup": "node scripts/setup-integrations.js"
   },
   "keywords": [

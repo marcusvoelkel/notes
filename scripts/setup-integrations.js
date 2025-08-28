@@ -8,7 +8,7 @@
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const { execSync } = require('child_process');
+const readline = require('readline');
 
 const colors = {
   reset: '\x1b[0m',
@@ -146,25 +146,66 @@ alias n='notes-cli'
   }
 
   /**
+   * Ask for user confirmation
+   */
+  async askConfirmation(question) {
+    const rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout
+    });
+
+    return new Promise((resolve) => {
+      rl.question(`${question} (y/N): `, (answer) => {
+        rl.close();
+        resolve(answer.toLowerCase() === 'y' || answer.toLowerCase() === 'yes');
+      });
+    });
+  }
+
+  /**
    * Main setup
    */
   async run() {
     console.log(`${colors.cyan}🔧 Apple Notes CLI - Integration Setup${colors.reset}`);
+    console.log(`\n${colors.yellow}This script will modify your shell configuration files.${colors.reset}`);
+    console.log(`It will add aliases for easier access to the notes CLI.\n`);
     
-    // Setup shell aliases
-    this.setupShellAliases();
+    // Ask for confirmation
+    const confirmed = await this.askConfirmation('Do you want to proceed with the setup?');
     
-    // Setup Claude commands
-    this.setupClaudeCommands();
+    if (!confirmed) {
+      console.log(`\n${colors.gray}Setup cancelled. You can run 'npm run setup' later if needed.${colors.reset}`);
+      process.exit(0);
+    }
+    
+    // Setup shell aliases with confirmation
+    const setupAliases = await this.askConfirmation('\nAdd shell aliases (note, n)?');
+    if (setupAliases) {
+      this.setupShellAliases();
+    }
+    
+    // Setup Claude commands with confirmation
+    const setupClaude = await this.askConfirmation('\nSetup Claude Code integration?');
+    if (setupClaude) {
+      this.setupClaudeCommands();
+    }
     
     // Show Codex info
     this.showCodexInfo();
     
-    console.log(`\n${colors.green}✅ Setup complete!${colors.reset}`);
-    console.log(`\n${colors.gray}You can now use:${colors.reset}`);
-    console.log(`  • ${colors.cyan}note "Title" "Content"${colors.reset} - Shell alias (works in terminal & Codex CLI)`);
-    console.log(`  • ${colors.cyan}n "Title"${colors.reset} - Short alias`);
-    console.log(`  • ${colors.cyan}/note "Title" "Content"${colors.reset} - Claude Code slash command`);
+    if (setupAliases || setupClaude) {
+      console.log(`\n${colors.green}✅ Setup complete!${colors.reset}`);
+      console.log(`\n${colors.gray}You can now use:${colors.reset}`);
+      if (setupAliases) {
+        console.log(`  • ${colors.cyan}note "Title" "Content"${colors.reset} - Shell alias (works in terminal & Codex CLI)`);
+        console.log(`  • ${colors.cyan}n "Title"${colors.reset} - Short alias`);
+      }
+      if (setupClaude) {
+        console.log(`  • ${colors.cyan}/note "Title" "Content"${colors.reset} - Claude Code slash command`);
+      }
+    } else {
+      console.log(`\n${colors.gray}No changes were made.${colors.reset}`);
+    }
   }
 }
 

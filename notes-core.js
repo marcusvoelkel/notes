@@ -1,6 +1,6 @@
 /**
- * Apple Notes Core Module - Simplified
- * Nur Notizen erstellen - schnell und zuverlässig
+ * Apple Notes Core Module
+ * Fast and reliable note creation for macOS
  */
 
 const { spawn } = require('child_process');
@@ -38,10 +38,10 @@ class NotesCore {
       osascript.on('close', (code) => {
         clearTimeout(timer);
         if (code !== 0) {
-          reject(new Error(stderr || 'AppleScript fehlgeschlagen'));
+          reject(new Error(stderr || 'AppleScript failed'));
         } else {
           if (this.debug && stderr) {
-            console.error('AppleScript Warnung:', stderr);
+            console.error('AppleScript warning:', stderr);
           }
           resolve(stdout.trim());
         }
@@ -52,26 +52,26 @@ class NotesCore {
         reject(err);
       });
 
-      // Sende Script an stdin
+      // Send script to stdin
       osascript.stdin.write(script);
       osascript.stdin.end();
     });
   }
 
   /**
-   * Validiert und bereinigt Input
+   * Validate and clean input
    */
   validateInput(input, type = 'text') {
     if (!input || typeof input !== 'string') {
-      throw new Error('Ungültiger Input: Text erwartet');
+      throw new Error('Invalid input: expected string');
     }
     
     if (type === 'title' && input.length > 255) {
-      throw new Error('Titel zu lang (max. 255 Zeichen)');
+      throw new Error('Title too long (max 255 chars)');
     }
     
     if (type === 'title' && input.trim().length === 0) {
-      throw new Error('Titel darf nicht leer sein');
+      throw new Error('Title cannot be empty');
     }
     
     return input.trim();
@@ -83,58 +83,103 @@ class NotesCore {
   escapeForAppleScript(text) {
     if (!text) return '';
     
-    // Ersetze Backslashes zuerst
-    return text
-      .replace(/\\/g, '\\\\')
-      .replace(/"/g, '\\"')
-      .replace(/\n/g, '\\n')
-      .replace(/\r/g, '\\r')
-      .replace(/\t/g, '\\t');
+    // Remove all control characters and non-printable characters
+    // This includes Unicode line separators, paragraph separators, etc.
+    text = text.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F]/g, '');
+    
+    // Remove Unicode control characters
+    text = text.replace(/[\u2028\u2029\u0085\u000B\u000C\u2028\u2029]/g, '');
+    
+    // Remove zero-width characters that could be used for obfuscation
+    text = text.replace(/[\u200B-\u200F\u202A-\u202E\u2060-\u2064\u206A-\u206F\uFEFF]/g, '');
+    
+    // Escape special AppleScript characters
+    text = text
+      .replace(/\\/g, '\\\\')  // Backslashes first
+      .replace(/"/g, '\\"')    // Double quotes
+      .replace(/'/g, "\\'")      // Single quotes
+      .replace(/\n/g, '\\n')     // Newlines
+      .replace(/\r/g, '\\r')     // Carriage returns
+      .replace(/\t/g, '\\t')     // Tabs
+      .replace(/\f/g, '\\f')     // Form feeds
+      .replace(/\v/g, '\\v');    // Vertical tabs
+    
+    // Additional protection: Remove any remaining non-ASCII characters that could cause issues
+    // Allow only printable ASCII and common Unicode ranges
+    text = text.replace(/[^\x20-\x7E\u00A0-\u00FF\u0100-\u017F\u0180-\u024F\u1E00-\u1EFF]/g, '');
+    
+    return text;
   }
 
   /**
-   * Konvertiert Markdown zu HTML für Apple Notes
+   * Remove dangerous HTML while keeping safe formatting
+   */
+  sanitizeHTML(text) {
+    // Remove script tags and content
+    text = text.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+    
+    // Remove event handlers
+    text = text.replace(/\s*on\w+\s*=\s*["'][^"']*["']/gi, '');
+    text = text.replace(/javascript:/gi, '');
+    
+    // Remove dangerous tags only
+    const dangerous = ['script', 'iframe', 'object', 'embed', 'form'];
+    dangerous.forEach(tag => {
+      const regex = new RegExp(`<${tag}\\b[^>]*>(?:.*?<\\/${tag}>)?`, 'gi');
+      text = text.replace(regex, '');
+    });
+    
+    return text;
+  }
+
+  /**
+   * Convert Markdown to HTML for Apple Notes
    */
   convertToHTML(text) {
+    // Sanitize dangerous content only
+    text = this.sanitizeHTML(text);
+    
     let html = text;
     
-    // Code-Blöcke
+    // Code blocks
     html = html.replace(/```([\s\S]*?)```/g, 
       '<blockquote style="background:#f5f5f5;padding:12px;border-left:4px solid #ddd;font-family:monospace;white-space:pre-wrap">$1</blockquote>');
     
-    // Inline-Code
+    // Inline code
     html = html.replace(/`([^`]+)`/g, 
       '<code style="background:#f0f0f0;padding:2px 6px;border-radius:3px;font-family:monospace">$1</code>');
     
-    // Überschriften
+    // Headings
     html = html.replace(/^### (.+)$/gm, '<h3 style="font-size:20px;margin:20px 0 16px">$1</h3>');
     html = html.replace(/^## (.+)$/gm, '<h2 style="font-size:24px;margin:24px 0 16px">$1</h2>');
     html = html.replace(/^# (.+)$/gm, '<h1 style="font-size:28px;margin:28px 0 20px">$1</h1>');
     
-    // Listen
+    // Bullet lists
     html = html.replace(/((?:^[\*\-] .+$\n?)+)/gm, (match) => {
-      const items = match.trim().split('\n').map(item => 
-        '<li style="margin-bottom:8px">' + item.replace(/^[\*\-] /, '') + '</li>'
-      ).join('');
+      const items = match.trim().split('\n').map(item => {
+        const content = item.replace(/^[\*\-] /, '');
+        return '<li style="margin-bottom:8px">' + content + '</li>';
+      }).join('');
       return '<ul style="margin:16px 0;padding-left:24px">' + items + '</ul>';
     });
     
-    // Nummerierte Listen
+    // Numbered lists
     html = html.replace(/((?:^\d+\. .+$\n?)+)/gm, (match) => {
-      const items = match.trim().split('\n').map(item => 
-        '<li style="margin-bottom:8px">' + item.replace(/^\d+\. /, '') + '</li>'
-      ).join('');
+      const items = match.trim().split('\n').map(item => {
+        const content = item.replace(/^\d+\. /, '');
+        return '<li style="margin-bottom:8px">' + content + '</li>';
+      }).join('');
       return '<ol style="margin:16px 0;padding-left:24px">' + items + '</ol>';
     });
     
-    // Fett und Kursiv
+    // Bold and italic
     html = html.replace(/\*\*([^\*]+)\*\*/g, '<strong>$1</strong>');
     html = html.replace(/\*([^\*]+)\*/g, '<em>$1</em>');
     
-    // Horizontale Linie
+    // Horizontal rule
     html = html.replace(/^---+$/gm, '<hr style="border:none;border-top:1px solid #ddd;margin:24px 0">');
     
-    // Absätze
+    // Paragraphs
     html = html.replace(/\n\n+/g, '</p><p style="margin:12px 0">');
     html = html.replace(/\n/g, '<br>');
     
@@ -144,7 +189,7 @@ class NotesCore {
   }
 
   /**
-   * Erstellt eine neue Notiz
+   * Create a new note
    */
   async create(title, body = '') {
     const validTitle = this.validateInput(title, 'title');
@@ -155,7 +200,7 @@ class NotesCore {
     const script = `
       tell application "Notes"
         make new note with properties {name:"${escapedTitle}", body:"${escapedBody}"}
-        return "Notiz erstellt: ${escapedTitle}"
+        return "Note created: ${escapedTitle}"
       end tell
     `;
     

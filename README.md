@@ -1,8 +1,8 @@
 # Apple Notes CLI
 
-CLI-Tool zum Erstellen von Notizen in Apple Notes.
+CLI tool for creating notes in Apple Notes.
 
-## Voraussetzungen
+## Requirements
 
 - macOS
 - Node.js ≥ 14.0.0
@@ -16,20 +16,20 @@ npm install -g apple-notes-cli@latest
 
 ### Via GitHub
 ```bash
-# Klont das Repository und erstellt automatisch einen "notes" Ordner
+# Clones the repository and automatically creates a "notes" folder
 git clone https://github.com/marcusvoelkel/notes.git
 cd notes
 npm install
 npm link
 ```
 
-### Setup Integration (Automatisch beim Install)
-Das Post-Install Script konfiguriert automatisch:
-- Shell-Aliases (`note`, `n`) in .zshrc/.bashrc
+### Setup Integration (Automatic on Install)
+The post-install script automatically configures:
+- Shell aliases (`note`, `n`) in .zshrc/.bashrc
 - Claude Code Slash Command (`/note`)
-- Codex CLI Integration (falls installiert)
+- Codex CLI Integration (if installed)
 
-Manuelles Setup falls benötigt:
+Manual setup if needed:
 ```bash
 npm run setup
 ```
@@ -46,9 +46,116 @@ npm update -g apple-notes-cli
 cd ~/notes && git pull && npm install
 ```
 
-## Verwendung
+## Usage
 
 ### Shortcuts/Aliases
+After installation, the following shortcuts are configured:
+- `note` - Alias for `notes-cli`
+- `n` - Short alias for `notes-cli`
+
+```bash
+# With alias
+note "My note"
+n "Quick note"
+
+# Natural language in Claude, Code, Codex CLI etc.
+"Summarize this chat in an Apple Note..."
+"Create an Apple Note about..."
+"Write an article about and save it in Apple Notes"
+
+# Simple note
+notes-cli "Title"
+note "Title"
+n "Title"
+
+# Note with content
+notes-cli "Title" "Note content"
+note "Title" "Note content"
+n "Title" "Note content"
+
+# Multi-line with Markdown
+notes-cli "Meeting" "## Agenda\n- Point 1\n- Point 2"
+
+# Show version
+notes-cli --version
+
+# Check for updates
+notes-cli --update
+
+# Show help
+notes-cli --help
+```
+
+## Markdown Support
+
+- `# Heading` - Headings
+- `**bold**` and `*italic*`
+- `- List` - Bullet points
+- `` `code` `` - Inline code
+
+## Debug
+
+```bash
+DEBUG=true notes-cli "Test" "Debug content"
+```
+
+## License
+
+MIT
+
+---
+
+## Deutsch / German
+
+CLI-Tool zum Erstellen von Notizen in Apple Notes.
+
+### Voraussetzungen
+
+- macOS
+- Node.js ≥ 14.0.0
+
+### Installation
+
+#### Via npm (empfohlen)
+```bash
+npm install -g apple-notes-cli@latest
+```
+
+#### Via GitHub
+```bash
+# Klont das Repository und erstellt automatisch einen "notes" Ordner
+git clone https://github.com/marcusvoelkel/notes.git
+cd notes
+npm install
+npm link
+```
+
+#### Setup Integration (Automatisch beim Install)
+Das Post-Install Script konfiguriert automatisch:
+- Shell-Aliases (`note`, `n`) in .zshrc/.bashrc
+- Claude Code Slash Command (`/note`)
+- Codex CLI Integration (falls installiert)
+
+Manuelles Setup falls benötigt:
+```bash
+npm run setup
+```
+
+#### Update
+```bash
+# Check for updates
+notes-cli --update
+
+# Update via npm (when published)
+npm update -g apple-notes-cli
+
+# Update via git
+cd ~/notes && git pull && npm install
+```
+
+### Verwendung
+
+#### Shortcuts/Aliases
 Nach der Installation wurden folgende Shortcuts eingerichtet:
 - `note` - Alias für `notes-cli`
 - `n` - Kurz-Alias für `notes-cli`
@@ -86,19 +193,19 @@ notes-cli --update
 notes-cli --help
 ```
 
-## Markdown-Support
+### Markdown-Support
 
 - `# Heading` - Überschriften
 - `**fett**` und `*kursiv*`
 - `- Liste` - Bullet Points
 - `` `code` `` - Inline Code
 
-## Debug
+### Debug
 
 ```bash
 DEBUG=true notes-cli "Test" "Debug-Inhalt"
 ```
 
-## Lizenz
+### Lizenz
 
 MIT

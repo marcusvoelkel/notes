@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 
 /**
- * Apple Notes CLI - Simplified
- * Schnelles Erstellen von Notizen in Apple Notes
+ * Apple Notes CLI
+ * Quick note creation for macOS
  */
 
 const NotesCore = require('./notes-core');
-const { execSync } = require('child_process');
+const { spawnSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const packageJson = require('./package.json');
@@ -29,7 +29,7 @@ class NotesCLI {
   }
 
   /**
-   * Zeigt die Hilfe an
+   * Show help
    */
   showHelp() {
     console.log(`
@@ -71,8 +71,18 @@ ${colors.gray}Environment:${colors.reset}
     try {
       console.log(`${colors.cyan}Checking for updates...${colors.reset}`);
       
-      // Get latest version from npm
-      const latestVersion = execSync('npm view apple-notes-cli version', { encoding: 'utf8' }).trim();
+      // Get latest version from npm (secure, no shell)
+      const npmResult = spawnSync('npm', ['view', 'apple-notes-cli', 'version'], {
+        encoding: 'utf8',
+        shell: false,
+        timeout: 10000
+      });
+      
+      if (npmResult.status !== 0) {
+        throw new Error('npm check failed');
+      }
+      
+      const latestVersion = npmResult.stdout.trim();
       const currentVersion = packageJson.version;
       
       if (latestVersion === currentVersion) {
@@ -82,19 +92,9 @@ ${colors.gray}Environment:${colors.reset}
         console.log(`\nTo update, run:\n  ${colors.cyan}npm install -g apple-notes-cli${colors.reset}`);
       }
     } catch (error) {
-      // Try checking GitHub if npm fails
-      try {
-        console.log(`${colors.gray}Checking GitHub...${colors.reset}`);
-        const gitLog = execSync('cd $(npm root -g)/apple-notes-cli && git fetch && git status -uno', { encoding: 'utf8' });
-        
-        if (gitLog.includes('Your branch is behind')) {
-          console.log(`${colors.yellow}Update available on GitHub${colors.reset}`);
-          console.log(`\nTo update, run:\n  ${colors.cyan}cd $(npm root -g)/apple-notes-cli && git pull${colors.reset}`);
-        } else {
-          console.log(`${colors.green}✓${colors.reset} You have the latest version`);
-        }
-      } catch (gitError) {
-        console.log(`${colors.gray}Could not check for updates${colors.reset}`);
+      console.log(`${colors.gray}Could not check for updates${colors.reset}`);
+      if (process.env.DEBUG === 'true') {
+        console.error(colors.gray, error.message, colors.reset);
       }
     }
   }
@@ -105,7 +105,7 @@ ${colors.gray}Environment:${colors.reset}
   async createNote(title, body = '') {
     try {
       if (!title) {
-        console.error(`${colors.red}Fehler: Titel erforderlich${colors.reset}`);
+        console.error(`${colors.red}Error: Title required${colors.reset}`);
         this.showHelp();
         process.exit(1);
       }
@@ -113,7 +113,7 @@ ${colors.gray}Environment:${colors.reset}
       const result = await this.core.create(title, body);
       console.log(`${colors.green}✓${colors.reset} ${result}`);
     } catch (error) {
-      console.error(`${colors.red}Fehler: ${error.message}${colors.reset}`);
+      console.error(`${colors.red}Error: ${error.message}${colors.reset}`);
       if (process.env.DEBUG === 'true') {
         console.error(colors.gray, error.stack, colors.reset);
       }
@@ -166,16 +166,16 @@ async function main() {
   await cli.createNote(title, body);
 }
 
-// Fehlerbehandlung
+// Error handling
 process.on('unhandledRejection', (error) => {
-  console.error(`${colors.red}Unerwarteter Fehler: ${error.message}${colors.reset}`);
+  console.error(`${colors.red}Unexpected error: ${error.message}${colors.reset}`);
   if (process.env.DEBUG === 'true') {
     console.error(error);
   }
   process.exit(1);
 });
 
-// Starte die CLI
+// Start CLI
 if (require.main === module) {
   main();
 }
