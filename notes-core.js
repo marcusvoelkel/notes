@@ -83,10 +83,15 @@ class NotesCore {
   escapeForAppleScript(text) {
     if (!text) return '';
     
+    // First remove any dangerous AppleScript commands before any escaping
+    // This ensures they are removed even if surrounded by special characters
+    text = text.replace(/\btell\b/gi, 't_e_l_l');  // Neutralize 'tell'
+    text = text.replace(/\bend\s+tell\b/gi, 'e_n_d_t_e_l_l');  // Neutralize 'end tell'
+    
     // Remove dangerous control characters but keep common ones
     text = text.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
     
-    // Remove Unicode control characters
+    // Remove Unicode control characters except newlines
     text = text.replace(/[\u2028\u2029]/g, '');
     
     // Remove zero-width characters that could be used for obfuscation  
@@ -97,14 +102,19 @@ class NotesCore {
     text = text
       .replace(/\\/g, '\\\\')       // Backslashes first
       .replace(/"/g, '\\"')         // Double quotes
-      .replace(/\n/g, ' ')             // Replace newlines with space (prevent injection)
-      .replace(/\r/g, ' ')             // Replace returns with space
-      .replace(/[\t\f\v]/g, ' ')     // Replace other whitespace with space
-      .replace(/}/g, '')                // Remove closing braces (prevent breaking out)
-      .replace(/{/g, '');               // Remove opening braces
+      .replace(/\r\n/g, '\\n')      // Windows line endings to Unix
+      .replace(/\r/g, '\\n')        // Mac line endings to Unix  
+      .replace(/\n/g, '\\n')        // Preserve newlines as escaped
+      .replace(/[\t]/g, '\\t')      // Preserve tabs
+      .replace(/[\f\v]/g, ' ')      // Replace other whitespace with space
+      .replace(/}/g, '')            // Remove closing braces (prevent breaking out)
+      .replace(/{/g, '');           // Remove opening braces
     
-    // Additional safety: remove any "end tell" or "tell" commands
-    text = text.replace(/\b(end\s+)?tell\b/gi, '');
+    // Truncate very long texts to prevent AppleScript issues
+    const maxLength = 50000; // Safe limit for AppleScript
+    if (text.length > maxLength) {
+      text = text.substring(0, maxLength) + '... (truncated)';
+    }
     
     return text;
   }
